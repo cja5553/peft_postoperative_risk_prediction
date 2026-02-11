@@ -20,8 +20,9 @@ setup(
     long_description_content_type="text/markdown",
     long_description=long_description,
     packages=find_packages(),
-    install_requires=[],
-    keywords=['Parameter Efficient Finetuning',"AI in Medicine","AI in Healthcare","Postoperative Risk Prediction"],
+    install_requires=["numpy>=1.23","pandas>=1.5","scikit-learn>=1.2","tqdm>=4.60","torch>=2.0","transformers>=4.40","peft>=0.10","accelerate>=0.20",],
+    python_requires=">=3.9",
+    keywords=['Parameter Efficient Finetuning',"PEFT","AI in Medicine","AI in Healthcare","Postoperative Risk Prediction", "IA3", "LORA"],
     classifiers=[
         "Development Status :: 1 - Planning",
         "Intended Audience :: Education",

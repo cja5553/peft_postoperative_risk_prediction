@@ -32,25 +32,6 @@ import shutil
 
 def train_tabular_classification(data, label, model_name_or_path,lr=0.0001):
 
-    """
-    Performs IA3 training with respect to the pre-operative tabular features. train_tabular_classification specifically handles categorical features
-    The idea is that upon training, under IA3.py, we can now gather the IA3 modules trained w.r.t each tabular feature to initialize 
-    the IA3 modules when training w.r.t to the outcome. 
-
-    Note because pre-op features are always taken prior to the surgery, so we should have them before knowing outcome. 
-    We hence do not need to have a seperate 'unseen' test set. 
-
-    Parameters:
-    - data (pandas dataframe): dataframe with 'text' as the texual inputs
-    - label (str): column name of categorical tabular feature of interest. 
-    - model_name_or_path (str): base model of which we intend to perform IA3 w.r.t. the categorical tabular feature
-    should be either one of "PharMolix/BioMedGPT-LM-7B", "microsoft/biogpt" or "emilyalsentzer/Bio_ClinicalBERT"
-    - lr (float): learning rate, defaults to 0.001. 
-
-
-    Returns: 
-    IA3-tuned model (w.r.t. the tabular feature) that will be saved under folder pretrained_model in local directory. 
-    """
 
     class ClinicalDatasetForTabularPreopClassification(Dataset):
         def __init__(self, dataframe, tokenizer,label_to_id):
@@ -128,6 +109,7 @@ def train_tabular_classification(data, label, model_name_or_path,lr=0.0001):
     mmm=(model_name_or_path.split("/"))[-1]
     model.save_pretrained(f"pretrained_model/{mmm}/{label}")
     tokenizer.save_pretrained(f"pretrained_model/{mmm}/{label}")
+    del label
     return(model)
 
 
@@ -135,26 +117,7 @@ def train_tabular_classification(data, label, model_name_or_path,lr=0.0001):
 def train_tabular_regression(data, label,model_name_or_path,lr=0.0001):
 
     
-    """
-    Performs IA3 training with respect to the pre-operative tabular features. train_tabular_classification specifically handles continous features
-    The idea is that upon training, under IA3.py, we can now gather the IA3 modules trained w.r.t each tabular feature to initialize 
-    the IA3 modules when training w.r.t to the outcome. 
 
-    Note because pre-op features are always taken prior to the surgery, so we should have them before knowing outcome. 
-    We hence do not need to have a seperate 'unseen' test set. 
-
-    Parameters:
-    - data (pandas dataframe): dataframe with 'text' as the texual inputs
-    - label (str): column name of continous tabular feature of interest. 
-    - model_name_or_path (str): base model of which we intend to perform IA3 w.r.t. the continous tabular feature
-    should be either one of "PharMolix/BioMedGPT-LM-7B", "microsoft/biogpt" or "emilyalsentzer/Bio_ClinicalBERT"
-    - lr (float): learning rate, defaults to 0.001. 
-
-
-    Returns: 
-    IA3-tuned model (w.r.t. the tabular feature) that will be saved under folder pretrained_model in local directory. 
-    """
- 
     class ClinicalDatasetForTabularPreopReg(Dataset):
         def __init__(self, dataframe, tokenizer):
             self.dataframe = dataframe
@@ -226,6 +189,7 @@ def train_tabular_regression(data, label,model_name_or_path,lr=0.0001):
     mmm=(model_name_or_path.split("/"))[-1]
     model.save_pretrained(f"pretrained_model/{mmm}/{label}")
     tokenizer.save_pretrained(f"pretrained_model/{mmm}/{label}")
+    del label
     return(model)
 
 
@@ -331,10 +295,13 @@ def train_tabular_infused_IA3(train,val,pretrained_model_name,label_col,text_col
     INSERT DOCUMENTATION HERE. 
     
     """
-    train["label"]=train[label_col]
-    train["text"]=train[text_col]
-    val["label"]=val[label_col]
-    val["text"]=val[text_col]
+    train = train.copy()  # Add this
+    val = val.copy()      # Add this
+    
+    train["label"] = train[label_col]
+    train["text"] = train[text_col]
+    val["label"] = val[label_col]
+    val["text"] = val[text_col]
 
     train = train.drop(columns=[label_col, text_col])
     val   = val.drop(columns=[label_col, text_col])
@@ -360,141 +327,137 @@ def train_tabular_infused_IA3(train,val,pretrained_model_name,label_col,text_col
     batch_size = 16
     lr = lr
     local_dir=f"trained_models/{new_model_name}"
-    if os.path.isdir(local_dir):
-        tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name,padding_side=padding_side,use_auth_token=False)
-        model= AutoModelForSequenceClassification.from_pretrained(local_dir, num_labels=len(label_to_id),use_auth_token=False)
+    class clinicalDataset(Dataset):
+        def __init__(self, dataframe, tokenizer):
+            self.dataframe = dataframe
+            self.tokenizer = tokenizer
+
+        def __len__(self):
+            return len(self.dataframe)
+
+        def __getitem__(self, idx):
+            sentence = self.dataframe.iloc[idx]['text']
+            label = self.dataframe.iloc[idx]['label']
+
+            # Tokenize the sentence
+            inputs = self.tokenizer(sentence, truncation=True, max_length=512, return_tensors="pt")
+            inputs = {key: val.squeeze(0) for key, val in inputs.items()}
+
+            # Convert label to a numeric format if necessary
+            label_to_id = {False: 0, True: 1}
+            label_id = label_to_id[label]
+
+            inputs['labels'] = torch.tensor(label_id, dtype=torch.long)
+
+            return inputs
+
+
+    def collate_fn(examples):
+        return tokenizer.pad(examples, padding="longest", return_tensors="pt")
+    padding_side = "right"
+    batch_size = 16
+    lr = lr
+    model_name_or_path = pretrained_model_name
+    peft_type = PeftType.IA3
+    device = "cuda"
+    num_epochs = num_epochs
+    if pretrained_model_name=="microsoft/biogpt":
+        peft_config = IA3Config(task_type="SEQ_CLS",target_modules=["k_proj", "v_proj","fc1", "fc2"], feedforward_modules=["fc1", "fc2"])
     else:
-        class clinicalDataset(Dataset):
-            def __init__(self, dataframe, tokenizer):
-                self.dataframe = dataframe
-                self.tokenizer = tokenizer
+        peft_config = IA3Config(task_type="SEQ_CLS")
 
-            def __len__(self):
-                return len(self.dataframe)
+    # Initialize the tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(model_name_or_path,padding_side=padding_side, use_auth_token=False)
 
-            def __getitem__(self, idx):
-                sentence = self.dataframe.iloc[idx]['text']
-                label = self.dataframe.iloc[idx]['label']
+    label_to_id = {False: 0, True: 1}
+    # Model
+    model = AutoModelForSequenceClassification.from_pretrained(model_name_or_path, num_labels=len(label_to_id), use_auth_token=False)
+    train_dataset = clinicalDataset(train, tokenizer)
+    val_dataset = clinicalDataset(val, tokenizer)
+    # Use the collate_fn in your DataLoaders
+    train_dataloader = DataLoader(train_dataset, shuffle=True, collate_fn=collate_fn, batch_size=batch_size)
+    val_dataloader = DataLoader(val_dataset, shuffle=True, collate_fn=collate_fn, batch_size=batch_size)
+    model = get_peft_model(model, peft_config)
+    model.print_trainable_parameters()
+    mmm=(pretrained_model_name.split("/"))[-1]
+    print("Initializing the PEFT parameters!")
+    model=parallel_advanced_initialization(model,columns_unique_labels_of_tabular_features,mmm)
+    model.save_pretrained(f"init_models/{mmm}/adv_init_model")
+    torch.cuda.empty_cache()
+    gc.collect()
 
-                # Tokenize the sentence
-                inputs = self.tokenizer(sentence, truncation=True, max_length=512, return_tensors="pt")
-                inputs = {key: val.squeeze(0) for key, val in inputs.items()}
+    optimizer = AdamW(params=model.parameters(), lr=lr,weight_decay=0.1)#,weight_decay=0.01)
+    lr_scheduler = get_linear_schedule_with_warmup(
+        optimizer=optimizer,
+        num_warmup_steps=0,
+        num_training_steps=(len(train_dataloader) * num_epochs),
+    )
+    model.to(device)
+    f1_metric = load('f1', config_name='multiclass', average='weighted')
+    accuracy_metric = load('accuracy')
+    precision_metric = load('precision')
+    recall_metric=load('recall')
+    # Assuming binary classification, accumulate predictions and true labels
+    all_predictions = []
+    all_references = []
+    all_scores = []  # For AUROC and AUPRC
+    for epoch in range(num_epochs):
+        model.train()
+        for step, batch in enumerate(tqdm_notebook(train_dataloader)):
+            batch = {k: v.to(device) for k, v in batch.items()}
+            outputs = model(**batch)
+            loss = outputs.loss
+            loss.backward()
+            optimizer.step()
+            lr_scheduler.step()
+            optimizer.zero_grad()
 
-                # Convert label to a numeric format if necessary
-                label_to_id = {False: 0, True: 1}
-                label_id = label_to_id[label]
-
-                inputs['labels'] = torch.tensor(label_id, dtype=torch.long)
-
-                return inputs
-
-
-        def collate_fn(examples):
-            return tokenizer.pad(examples, padding="longest", return_tensors="pt")
-        padding_side = "right"
-        batch_size = 16
-        lr = lr
-        model_name_or_path = pretrained_model_name
-        peft_type = PeftType.IA3
-        device = "cuda"
-        num_epochs = num_epochs
-        if pretrained_model_name=="microsoft/biogpt":
-            peft_config = IA3Config(task_type="SEQ_CLS",target_modules=["k_proj", "v_proj","fc1", "fc2"], feedforward_modules=["fc1", "fc2"])
-        else:
-            peft_config = IA3Config(task_type="SEQ_CLS")
-
-        # Initialize the tokenizer
-        tokenizer = AutoTokenizer.from_pretrained(model_name_or_path,padding_side=padding_side, use_auth_token=False)
-
-        label_to_id = {False: 0, True: 1}
-        # Model
-        model = AutoModelForSequenceClassification.from_pretrained(model_name_or_path, num_labels=len(label_to_id), use_auth_token=False)
-        train_dataset = clinicalDataset(train, tokenizer)
-        val_dataset = clinicalDataset(val, tokenizer)
-        # Use the collate_fn in your DataLoaders
-        train_dataloader = DataLoader(train_dataset, shuffle=True, collate_fn=collate_fn, batch_size=batch_size)
-        val_dataloader = DataLoader(val_dataset, shuffle=True, collate_fn=collate_fn, batch_size=batch_size)
-        model = get_peft_model(model, peft_config)
-        model.print_trainable_parameters()
-        mmm=(pretrained_model_name.split("/"))[-1]
-        print("Initializing the PEFT parameters!")
-        model=parallel_advanced_initialization(model,columns_unique_labels_of_tabular_features,mmm)
-        model.save_pretrained(f"init_models/{mmm}/adv_init_model")
-        torch.cuda.empty_cache()
-        gc.collect()
-
-        optimizer = AdamW(params=model.parameters(), lr=lr,weight_decay=0.1)#,weight_decay=0.01)
-        lr_scheduler = get_linear_schedule_with_warmup(
-            optimizer=optimizer,
-            num_warmup_steps=0,
-            num_training_steps=(len(train_dataloader) * num_epochs),
-        )
-        model.to(device)
-        f1_metric = load('f1', config_name='multiclass', average='weighted')
-        accuracy_metric = load('accuracy')
-        precision_metric = load('precision')
-        recall_metric=load('recall')
-        # Assuming binary classification, accumulate predictions and true labels
-        all_predictions = []
-        all_references = []
-        all_scores = []  # For AUROC and AUPRC
-        for epoch in range(num_epochs):
-            model.train()
-            for step, batch in enumerate(tqdm_notebook(train_dataloader)):
-                batch = {k: v.to(device) for k, v in batch.items()}
+        model.eval()
+        for step, batch in enumerate(tqdm_notebook(val_dataloader)):
+            batch = {k: v.to(device) for k, v in batch.items()}
+            with torch.no_grad():
                 outputs = model(**batch)
-                loss = outputs.loss
-                loss.backward()
-                optimizer.step()
-                lr_scheduler.step()
-                optimizer.zero_grad()
 
-            model.eval()
-            for step, batch in enumerate(tqdm_notebook(val_dataloader)):
-                batch = {k: v.to(device) for k, v in batch.items()}
-                with torch.no_grad():
-                    outputs = model(**batch)
+            # Assuming outputs.logits are raw scores for each class
+            scores = torch.nn.functional.softmax(outputs.logits, dim=-1)[:, 1].cpu().numpy()  # Get probability for class '1'
+            predictions = outputs.logits.argmax(dim=-1).cpu().numpy()
+            references = batch["labels"].cpu().numpy()
 
-                # Assuming outputs.logits are raw scores for each class
-                scores = torch.nn.functional.softmax(outputs.logits, dim=-1)[:, 1].cpu().numpy()  # Get probability for class '1'
-                predictions = outputs.logits.argmax(dim=-1).cpu().numpy()
-                references = batch["labels"].cpu().numpy()
+            all_scores.extend(scores)
+            all_predictions.extend(predictions)
+            all_references.extend(references)
 
-                all_scores.extend(scores)
-                all_predictions.extend(predictions)
-                all_references.extend(references)
+            # Your existing metric updates here
+            accuracy_metric.add_batch(predictions=predictions, references=references)
+            f1_metric.add_batch(predictions=predictions, references=references)
+            recall_metric.add_batch(predictions=predictions, references=references)
+            precision_metric.add_batch(predictions=predictions, references=references)
 
-                # Your existing metric updates here
-                accuracy_metric.add_batch(predictions=predictions, references=references)
-                f1_metric.add_batch(predictions=predictions, references=references)
-                recall_metric.add_batch(predictions=predictions, references=references)
-                precision_metric.add_batch(predictions=predictions, references=references)
+        # Compute final metric values
+        final_accuracy = accuracy_metric.compute()
+        final_f1 = f1_metric.compute()
+        final_recall = recall_metric.compute()
+        final_precision = precision_metric.compute()
 
-            # Compute final metric values
-            final_accuracy = accuracy_metric.compute()
-            final_f1 = f1_metric.compute()
-            final_recall = recall_metric.compute()
-            final_precision = precision_metric.compute()
+        # Calculate AUROC and AUPRC
+        final_auroc = roc_auc_score(all_references, all_scores)
+        final_auprc = average_precision_score(all_references, all_scores)
 
-            # Calculate AUROC and AUPRC
-            final_auroc = roc_auc_score(all_references, all_scores)
-            final_auprc = average_precision_score(all_references, all_scores)
+        # Output the metrics
+        print("="*20)
+        print("VALIDATION METRICS:")
+        print(f"Accuracy: {final_accuracy['accuracy']}")
+        print(f"Precision: {final_precision['precision']}")
+        print(f"Recall: {final_recall['recall']}")
+        print(f"F1 Score: {final_f1['f1']}")
+        print(f"AUROC: {final_auroc}")
+        print(f"AUPRC: {final_auprc}")
 
-            # Output the metrics
-            print("="*20)
-            print("VALIDATION METRICS:")
-            print(f"Accuracy: {final_accuracy['accuracy']}")
-            print(f"Precision: {final_precision['precision']}")
-            print(f"Recall: {final_recall['recall']}")
-            print(f"F1 Score: {final_f1['f1']}")
-            print(f"AUROC: {final_auroc}")
-            print(f"AUPRC: {final_auprc}")
+    # Save your model and tokenizer
+    model.save_pretrained(f"trained_models/{new_model_name}")
+    tokenizer.save_pretrained(f"trained_models/{new_model_name}")
 
-        # Save your model and tokenizer
-        model.save_pretrained(f"trained_models/{new_model_name}")
-        tokenizer.save_pretrained(f"trained_models/{new_model_name}")
-
-        shutil.rmtree("pretrained_model", ignore_errors=True)
+    shutil.rmtree("pretrained_model", ignore_errors=True)
 
     return model, tokenizer
 
