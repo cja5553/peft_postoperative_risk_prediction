@@ -135,3 +135,6 @@ model, tokenizer = train_tabular_infused_IA3(
 - The trained model is saved to `trained_models/IA3_{pretrained_model_name}_{label_col}`
 
 
+## Questions?
+
+Contact me at [alba@wustl.edu](mailto:alba@wustl.edu)

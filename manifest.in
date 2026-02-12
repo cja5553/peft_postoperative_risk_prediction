@@ -1,0 +1,3 @@
+include README.md
+include Figure_1.jpg
+global-include *.py
