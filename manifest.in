@@ -1,3 +1,4 @@
 include README.md
 include Figure_1.jpg
 global-include *.py
+include README_PYPI.md

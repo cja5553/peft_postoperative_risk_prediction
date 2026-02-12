@@ -3,7 +3,7 @@
 
 **T**abular-**i**nfused **P**arameter **E**fficient **F**ine**t**uning (tipeft) is a novel PEFT method designed to infuse tabular features into the initialization process of re-parameterization parameter efficient finetuning (PEFT) methods. This provides an element of well-informed and representational capacity towards the newly introduced PEFT parameters, which are usually introduced and initialized independently
 
-![Overview of tipeft framework](https://raw.githubusercontent.com/cja5553/peft_postoperative_risk_prediction/main/Figure_1.jpg)
+![Overview of tipeft framework](Figure_1.jpg)
 
 It is specifically designed for postoperative predictions in clinical care, where predictive and valuable pre-operative tabular features are often under-utilized in language model finetuning. For now, it supports both `LoRA` and `IA3`
 
@@ -38,11 +38,10 @@ https://pytorch.org/
 `tipeft` has been tested and verified on the following configuration:
 
 | Component | Tested Version |
-|---|---|
+|-----------|----------------|
 | OS | Windows 10 |
 | Python | 3.9.19 |
 | CUDA | 12.6 |
-
 
 #### Important Notes
 
@@ -109,25 +108,23 @@ model, tokenizer = train_tabular_infused_IA3(
 #### Parameters
 
 | Parameter | Type | Description |
-|---|---|---|
+|-----------|------|-------------|
 | `train` | pandas.DataFrame | Training dataframe containing text, label, and tabular feature columns |
 | `val` | pandas.DataFrame | Validation dataframe with same structure as train |
 | `pretrained_model_name` | str | Base model to fine-tune. Currently supports: `"emilyalsentzer/Bio_ClinicalBERT"` or `"microsoft/biogpt"` |
 | `label_col` | str | Column name of the binary outcome label (must contain `True`/`False` values) |
 | `text_col` | str | Column name containing the clinical text |
-| `columns_unique_labels_of_tabular_features` | dict | Map feature → num unique values (use `1` continuous, `>1` categorical) |
-| `lr` | float | Learning rate (default: `0.001`) |
-| `num_epochs` | int | Epochs (default: `5`) |
-| `lr_of_tabular_infused_features` | float | LR for tabular pre-training (default: `0.0001`) |
-
+| `columns_unique_labels_of_tabular_features` | dict | Dictionary mapping tabular feature names to their number of unique values. Use `1` for continuous features, `>1` for categorical features |
+| `lr` | float | Learning rate for final model training (default: `0.001`) |
+| `num_epochs` | int | Number of training epochs for final model (default: `5`) |
+| `lr_of_tabular_infused_features` | float | Learning rate for tabular feature pre-training (default: `0.0001`) |
 
 #### Returns
 
 | Return | Type | Description |
-|---|---|---|
+|--------|------|-------------|
 | `model` | PeftModel | The trained IA3 model |
 | `tokenizer` | AutoTokenizer | The tokenizer for the model |
-
 
 #### Notes
 

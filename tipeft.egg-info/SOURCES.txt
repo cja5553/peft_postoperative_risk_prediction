@@ -1,7 +1,9 @@
 Figure_1.jpg
 MANIFEST.in
 README.md
+README_PYPI.md
 license.txt
+maketables.py
 setup.py
 tipeft/IA3.py
 tipeft/__init__.py

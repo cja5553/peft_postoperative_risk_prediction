@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: tipeft
-Version: 0.0.4
+Version: 0.1.0
 Summary: Tabular-Infused Parameter Efficient Finetuning (tipeft)
 Author: Charles Alba
 Author-email: alba@wustl.edu
@@ -41,7 +41,7 @@ Dynamic: summary
 
 **T**abular-**i**nfused **P**arameter **E**fficient **F**ine**t**uning (tipeft) is a novel PEFT method designed to infuse tabular features into the initialization process of re-parameterization parameter efficient finetuning (PEFT) methods. This provides an element of well-informed and representational capacity towards the newly introduced PEFT parameters, which are usually introduced and initialized independently
 
-![Overview of tipeft framework](https://raw.githubusercontent.com/cja5553/peft_postoperative_risk_prediction/main/Figure_1.jpg)
+![Overview of tipeft framework](Figure_1.jpg)
 
 It is specifically designed for postoperative predictions in clinical care, where predictive and valuable pre-operative tabular features are often under-utilized in language model finetuning. For now, it supports both `LoRA` and `IA3`
 
@@ -75,12 +75,9 @@ https://pytorch.org/
 
 `tipeft` has been tested and verified on the following configuration:
 
-| Component | Tested Version |
-|---|---|
-| OS | Windows 10 |
-| Python | 3.9.19 |
-| CUDA | 12.6 |
-
+- **OS**: Windows 10
+- **Python**: 3.9.19
+- **CUDA**: 12.6
 
 #### Important Notes
 
@@ -120,7 +117,25 @@ pip install tipeft
 
 ### `train_tabular_infused_IA3`
 
-Trains a tabular-infused IA3 model for binary classification. 
+
+#### Parameters
+
+- **`train`** (*pandas.DataFrame*): Training dataframe containing text, label, and tabular feature columns (required)
+- **`val`** (*pandas.DataFrame*): Validation dataframe with same structure as train (required)
+- **`pretrained_model_name`** (*str*): Base model to fine-tune. Supports `"emilyalsentzer/Bio_ClinicalBERT"` or `"microsoft/biogpt"` (required)
+- **`label_col`** (*str*): Column name of the binary outcome label. Must contain `True`/`False` values. (required)
+- **`text_col`** (*str*): Column name containing the clinical text (required)
+- **`columns_unique_labels_of_tabular_features`** (dict): Map feature names to unique values. Use `1` for continuous, `>1` for categorical. (required)
+- **`lr`** (*float*): Learning rate for final model training (default: `0.001`)
+- **`num_epochs`** (*int*): Number of training epochs (default: `5`)
+- **`lr_of_tabular_infused_features`** (*float*): Learning rate for tabular pre-training (default: `0.0001`)
+
+#### Returns
+
+- **`model`** (*PeftModel*): The trained IA3 model
+- **`tokenizer`** (*AutoTokenizer*): The tokenizer for the model
+
+#### Example use case
 
 ```python
 from tipeft import train_tabular_infused_IA3
@@ -143,28 +158,6 @@ model, tokenizer = train_tabular_infused_IA3(
     lr_of_tabular_infused_features=0.0001
 )
 ```
-
-#### Parameters
-
-| Parameter | Type | Description |
-|---|---|---|
-| `train` | pandas.DataFrame | Training dataframe containing text, label, and tabular feature columns |
-| `val` | pandas.DataFrame | Validation dataframe with same structure as train |
-| `pretrained_model_name` | str | Base model to fine-tune. Currently supports: `"emilyalsentzer/Bio_ClinicalBERT"` or `"microsoft/biogpt"` |
-| `label_col` | str | Column name of the binary outcome label (must contain `True`/`False` values) |
-| `text_col` | str | Column name containing the clinical text |
-| `columns_unique_labels_of_tabular_features` | dict | Map feature → num unique values (use `1` continuous, `>1` categorical) |
-| `lr` | float | Learning rate (default: `0.001`) |
-| `num_epochs` | int | Epochs (default: `5`) |
-| `lr_of_tabular_infused_features` | float | LR for tabular pre-training (default: `0.0001`) |
-
-
-#### Returns
-
-| Return | Type | Description |
-|---|---|---|
-| `model` | PeftModel | The trained IA3 model |
-| `tokenizer` | AutoTokenizer | The tokenizer for the model |
 
 
 #### Notes
