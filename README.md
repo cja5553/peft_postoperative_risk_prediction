@@ -95,9 +95,7 @@ model, tokenizer = train_tabular_infused_IA3(
     columns_unique_labels_of_tabular_features={
         "gender": 2,
         "insurance": 3,
-        "language": 2,
         "marital_status": 4,
-        "race": 25,
         "anchor_age": 1,
         "anchor_year": 1
     },
