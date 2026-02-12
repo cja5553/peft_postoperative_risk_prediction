@@ -27,7 +27,7 @@ setup(
         "torch==2.8.0",
         "transformers==4.57.0",
         "peft==0.17.1",
-        "accelerate>=1.10",
+        "accelerate==1.10",
         "evaluate==0.4.2",
         "datasets==2.21.0",
     ],
