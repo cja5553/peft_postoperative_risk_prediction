@@ -1,0 +1,181 @@
+Metadata-Version: 2.4
+Name: tipeft
+Version: 0.0.4
+Summary: Tabular-Infused Parameter Efficient Finetuning (tipeft)
+Author: Charles Alba
+Author-email: alba@wustl.edu
+Keywords: Parameter Efficient Finetuning,PEFT,AI in Medicine,AI in Healthcare,Postoperative Risk Prediction,IA3,LORA
+Classifier: Development Status :: 1 - Planning
+Classifier: Intended Audience :: Education
+Classifier: Intended Audience :: Science/Research
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: Unix
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: Microsoft :: Windows
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: license.txt
+Requires-Dist: numpy>=2.0.2
+Requires-Dist: pandas>=2.2.2
+Requires-Dist: scikit-learn>=1.5
+Requires-Dist: tqdm>=4.67
+Requires-Dist: torch==2.8.0
+Requires-Dist: transformers==4.57.0
+Requires-Dist: peft==0.17.1
+Requires-Dist: accelerate==1.10.1
+Requires-Dist: evaluate==0.4.2
+Requires-Dist: datasets==2.21.0
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: keywords
+Dynamic: license-file
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
+
+
+# tipeft
+
+**T**abular-**i**nfused **P**arameter **E**fficient **F**ine**t**uning (tipeft) is a novel PEFT method designed to infuse tabular features into the initialization process of re-parameterization parameter efficient finetuning (PEFT) methods. This provides an element of well-informed and representational capacity towards the newly introduced PEFT parameters, which are usually introduced and initialized independently
+
+![Overview of tipeft framework](https://raw.githubusercontent.com/cja5553/peft_postoperative_risk_prediction/main/Figure_1.jpg)
+
+It is specifically designed for postoperative predictions in clinical care, where predictive and valuable pre-operative tabular features are often under-utilized in language model finetuning. For now, it supports both `LoRA` and `IA3`
+
+
+## Requirements  
+### Dependencies
+
+
+The following Python packages are required for `tipeft`:
+
+- `torch`
+- `transformers`
+- `peft`
+- `accelerate`
+- `numpy`
+- `pandas`
+- `scikit-learn`
+- `tqdm`
+
+Install dependencies with:
+
+```bash
+pip install torch transformers peft accelerate numpy pandas scikit-learn tqdm
+```
+
+#### Note on Pytorch installation
+Because PyTorch wheels vary by CUDA version and hardware, it is recommended to install PyTorch manually following the instructions at:
+https://pytorch.org/ 
+
+### System Requirements
+
+`tipeft` has been tested and verified on the following configuration:
+
+| Component | Tested Version |
+|---|---|
+| OS | Windows 10 |
+| Python | 3.9.19 |
+| CUDA | 12.6 |
+
+
+#### Important Notes
+
+- **Environment**: Must be run in a Jupyter notebook. Running as a standalone Python script may cause multiprocessing issues.
+- **CPU cores**: At least 10 CPU cores recommended (uses `Pool(processes=10)` internally).
+- **GPU**: CUDA-compatible GPU required.
+- **OS**: Tested on Windows. Linux/Mac compatibility not yet verified.
+
+#### Known Compatibility Limitations
+
+1. **Jupyter only** - Uses `tqdm.notebook` which may not display correctly outside Jupyter.
+2. **Multiprocessing** - May behave differently on Linux/Mac due to different multiprocessing backends.
+
+If you encounter issues on a different setup, please open an issue with your system info.
+
+#### GPU requirements
+
+`tipeft` is designed for GPU acceleration.
+- At least 1 GPU is recommended
+- Suggested minimum: 16GB VRAM 
+- Memory usage depends on:
+    - sequence length
+    - model size
+    - batch size
+    - peft configuration
+
+
+
+## Installation
+To install in python, simply do the following: 
+```bash
+pip install tipeft
+```
+
+
+## Usage
+
+### `train_tabular_infused_IA3`
+
+Trains a tabular-infused IA3 model for binary classification. 
+
+```python
+from tipeft import train_tabular_infused_IA3
+
+model, tokenizer = train_tabular_infused_IA3(
+    train=train_df,
+    val=val_df,
+    pretrained_model_name="emilyalsentzer/Bio_ClinicalBERT",
+    label_col="in_hospital_mortality",
+    text_col="clinical_notes",
+    columns_unique_labels_of_tabular_features={
+        "gender": 2,
+        "insurance": 3,
+        "marital_status": 4,
+        "anchor_age": 1,
+        "anchor_year": 1
+    },
+    lr=0.001,
+    num_epochs=5,
+    lr_of_tabular_infused_features=0.0001
+)
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `train` | pandas.DataFrame | Training dataframe containing text, label, and tabular feature columns |
+| `val` | pandas.DataFrame | Validation dataframe with same structure as train |
+| `pretrained_model_name` | str | Base model to fine-tune. Currently supports: `"emilyalsentzer/Bio_ClinicalBERT"` or `"microsoft/biogpt"` |
+| `label_col` | str | Column name of the binary outcome label (must contain `True`/`False` values) |
+| `text_col` | str | Column name containing the clinical text |
+| `columns_unique_labels_of_tabular_features` | dict | Map feature → num unique values (use `1` continuous, `>1` categorical) |
+| `lr` | float | Learning rate (default: `0.001`) |
+| `num_epochs` | int | Epochs (default: `5`) |
+| `lr_of_tabular_infused_features` | float | LR for tabular pre-training (default: `0.0001`) |
+
+
+#### Returns
+
+| Return | Type | Description |
+|---|---|---|
+| `model` | PeftModel | The trained IA3 model |
+| `tokenizer` | AutoTokenizer | The tokenizer for the model |
+
+
+#### Notes
+
+- The `label_col` must contain boolean values (`True`/`False`)
+- Categorical features should have `>1` unique labels in `columns_unique_labels_of_tabular_features`
+- Continuous/numerical features should have `1` as their value in `columns_unique_labels_of_tabular_features`
+- Ensure all unique values in categorical columns appear in both train and val sets
+- The trained model is saved to `trained_models/IA3_{pretrained_model_name}_{label_col}`
+
+
+## Questions?
+
+Contact me at [alba@wustl.edu](mailto:alba@wustl.edu)

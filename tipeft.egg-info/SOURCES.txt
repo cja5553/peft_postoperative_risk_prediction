@@ -1,0 +1,12 @@
+Figure_1.jpg
+MANIFEST.in
+README.md
+license.txt
+setup.py
+tipeft/IA3.py
+tipeft/__init__.py
+tipeft.egg-info/PKG-INFO
+tipeft.egg-info/SOURCES.txt
+tipeft.egg-info/dependency_links.txt
+tipeft.egg-info/requires.txt
+tipeft.egg-info/top_level.txt
