@@ -10,7 +10,6 @@ VERSION = '0.0.1'
 DESCRIPTION = 'Tabular-Infused Parameter Efficient Finetuning (tipeft)'
 LONG_DESCRIPTION = "Tabular-Infused Parameter Efficient Finetuning (tipeft) specifically designed for postoperative risk prediction using clinical notes and complementary preoperative tabular features. Available for re-parameterization methods (LoRa and IA3)."
 
-# Setting up
 setup(
     name="tipeft",
     version=VERSION,
@@ -20,7 +19,18 @@ setup(
     long_description_content_type="text/markdown",
     long_description=long_description,
     packages=find_packages(),
-    install_requires=["numpy>=1.23","pandas>=1.5","scikit-learn>=1.2","tqdm>=4.60","torch>=2.0","transformers>=4.40","peft>=0.10","accelerate>=0.20",],
+    install_requires=[
+        "numpy>=2.0.2",
+        "pandas>=2.2.2",
+        "scikit-learn>=1.5",
+        "tqdm>=4.67",
+        "torch==2.8.0",
+        "transformers==4.57.0",
+        "peft==0.17.1",
+        "accelerate>=1.10",
+        "evaluate==0.4.2",
+        "datasets==2.21.0",
+    ],
     python_requires=">=3.9",
     keywords=['Parameter Efficient Finetuning',"PEFT","AI in Medicine","AI in Healthcare","Postoperative Risk Prediction", "IA3", "LORA"],
     classifiers=[

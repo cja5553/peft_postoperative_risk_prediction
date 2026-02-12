@@ -77,6 +77,63 @@ pip install tipeft
 ```
 
 
-## Quick Guide
+## Usage
+
+### `train_tabular_infused_IA3`
+
+Trains a tabular-infused IA3 model for binary classification. 
+
+```python
+from tipeft import train_tabular_infused_IA3
+
+model, tokenizer = train_tabular_infused_IA3(
+    train=train_df,
+    val=val_df,
+    pretrained_model_name="emilyalsentzer/Bio_ClinicalBERT",
+    label_col="in_hospital_mortality",
+    text_col="clinical_notes",
+    columns_unique_labels_of_tabular_features={
+        "gender": 2,
+        "insurance": 3,
+        "language": 2,
+        "marital_status": 4,
+        "race": 25,
+        "anchor_age": 1,
+        "anchor_year": 1
+    },
+    lr=0.001,
+    num_epochs=5,
+    lr_of_tabular_infused_features=0.0001
+)
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `train` | pandas.DataFrame | Training dataframe containing text, label, and tabular feature columns |
+| `val` | pandas.DataFrame | Validation dataframe with same structure as train |
+| `pretrained_model_name` | str | Base model to fine-tune. Currently supports: `"emilyalsentzer/Bio_ClinicalBERT"` or `"microsoft/biogpt"` |
+| `label_col` | str | Column name of the binary outcome label (must contain `True`/`False` values) |
+| `text_col` | str | Column name containing the clinical text |
+| `columns_unique_labels_of_tabular_features` | dict | Dictionary mapping tabular feature names to their number of unique values. Use `1` for continuous features, `>1` for categorical features |
+| `lr` | float | Learning rate for final model training (default: `0.001`) |
+| `num_epochs` | int | Number of training epochs for final model (default: `5`) |
+| `lr_of_tabular_infused_features` | float | Learning rate for tabular feature pre-training (default: `0.0001`) |
+
+#### Returns
+
+| Return | Type | Description |
+|--------|------|-------------|
+| `model` | PeftModel | The trained IA3 model |
+| `tokenizer` | AutoTokenizer | The tokenizer for the model |
+
+#### Notes
+
+- The `label_col` must contain boolean values (`True`/`False`)
+- Categorical features should have `>1` unique labels in `columns_unique_labels_of_tabular_features`
+- Continuous/numerical features should have `1` as their value in `columns_unique_labels_of_tabular_features`
+- Ensure all unique values in categorical columns appear in both train and val sets
+- The trained model is saved to `trained_models/IA3_{pretrained_model_name}_{label_col}`
 
 
