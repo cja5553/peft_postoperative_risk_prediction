@@ -31,7 +31,7 @@ import shutil
 
 
 def train_tabular_classification(data, label, model_name_or_path,lr=0.0001):
-
+    data = data.copy()
 
     class ClinicalDatasetForTabularPreopClassification(Dataset):
         def __init__(self, dataframe, tokenizer,label_to_id):
@@ -115,8 +115,8 @@ def train_tabular_classification(data, label, model_name_or_path,lr=0.0001):
 
 
 def train_tabular_regression(data, label,model_name_or_path,lr=0.0001):
-
-    
+    data = data.copy()
+    data[label] = data[label].astype(float)
 
     class ClinicalDatasetForTabularPreopReg(Dataset):
         def __init__(self, dataframe, tokenizer):
@@ -311,7 +311,6 @@ def train_tabular_infused_IA3(train,val,pretrained_model_name,label_col,text_col
     list_categorical = [k for k, v in columns_unique_labels_of_tabular_features.items() if v > 1]
 
     for i in tqdm_notebook(list(list_numerical), desc="training numerical tabular-infused features"):
-        train[i]=train[i].astype(float)
         train_tabular_regression(train, i, pretrained_model_name,lr_of_tabular_infused_features)
 
     for i in tqdm_notebook(list(list_categorical), desc="training categorical tabular-infused features"):
