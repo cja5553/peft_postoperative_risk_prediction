@@ -3,7 +3,7 @@
 
 **T**abular-**i**nfused **P**arameter **E**fficient **F**ine**t**uning (tipeft) is a novel PEFT method designed to infuse tabular features into the initialization process of re-parameterization parameter efficient finetuning (PEFT) methods. This provides an element of well-informed and representational capacity towards the newly introduced PEFT parameters, which are usually introduced and initialized independently
 
-![Overview of tipeft framework](Figure_1.jpg)
+![Overview of tipeft framework](https://raw.githubusercontent.com/cja5553/peft_postoperative_risk_prediction/main/Figure_1.jpg)
 
 It is specifically designed for postoperative predictions in clinical care, where predictive and valuable pre-operative tabular features are often under-utilized in language model finetuning. For now, it supports both `LoRA` and `IA3`
 
@@ -23,15 +23,20 @@ The following Python packages are required for `tipeft`:
 - `scikit-learn`
 - `tqdm`
 
+
+
+
 Install dependencies with:
 
 ```bash
 pip install torch transformers peft accelerate numpy pandas scikit-learn tqdm
 ```
 
+
+
+
 #### Note on Pytorch installation
-Because PyTorch wheels vary by CUDA version and hardware, it is recommended to install PyTorch manually following the instructions at:
-https://pytorch.org/ 
+Because PyTorch wheels vary by CUDA version and hardware, it is recommended to install PyTorch manually following the instructions at https://pytorch.org/ 
 
 ### System Requirements
 
