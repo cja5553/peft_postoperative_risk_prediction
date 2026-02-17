@@ -316,7 +316,8 @@ def train_tabular_infused_IA3(train,val,pretrained_model_name,label_col,text_col
     for i in tqdm_notebook(list(list_categorical), desc="training categorical tabular-infused features"):
         train_tabular_classification(train, i, pretrained_model_name,lr_of_tabular_infused_features)
 
-    new_model_name=f"IA3_{pretrained_model_name}_{label_col}"
+    mmm=(pretrained_model_name.split("/"))[-1]
+    new_model_name=f"IA3_{mmm}_{label_col}"
 
 
     torch.manual_seed(42)
@@ -378,7 +379,6 @@ def train_tabular_infused_IA3(train,val,pretrained_model_name,label_col,text_col
     val_dataloader = DataLoader(val_dataset, shuffle=True, collate_fn=collate_fn, batch_size=batch_size)
     model = get_peft_model(model, peft_config)
     model.print_trainable_parameters()
-    mmm=(pretrained_model_name.split("/"))[-1]
     print("Initializing the PEFT parameters!")
     model=parallel_advanced_initialization(model,columns_unique_labels_of_tabular_features,mmm)
     model.save_pretrained(f"init_models/{mmm}/adv_init_model")
