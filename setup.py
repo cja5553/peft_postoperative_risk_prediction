@@ -6,7 +6,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 readme_path = os.path.join(here, "README_PYPI.md")
 with codecs.open(readme_path, encoding="utf-8") as fh:
     long_description = fh.read()
-VERSION = '0.1.2'
+VERSION = '0.1.3'
 DESCRIPTION = 'Tabular-Infused Parameter Efficient Finetuning (tipeft)'
 LONG_DESCRIPTION = "Tabular-Infused Parameter Efficient Finetuning (tipeft) specifically designed for postoperative risk prediction using clinical notes and complementary preoperative tabular features. Available for re-parameterization methods (LoRa and IA3)."
 

@@ -7,6 +7,7 @@ maketables.py
 setup.py
 tipeft/IA3.py
 tipeft/__init__.py
+tipeft/lora.py
 tipeft.egg-info/PKG-INFO
 tipeft.egg-info/SOURCES.txt
 tipeft.egg-info/dependency_links.txt
