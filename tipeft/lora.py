@@ -380,7 +380,7 @@ def train_tabular_infused_lora(train,val,pretrained_model_name,label_col,text_co
     model.print_trainable_parameters()
     mmm=(pretrained_model_name.split("/"))[-1]
     print("Initializing the PEFT parameters!")
-    model=parallel_advanced_initialization(model,columns_unique_labels_of_tabular_features,mmm)
+    model=parallel_advanced_initialization(model,columns_unique_labels_of_tabular_features,mmm, pretrained_model_name)
     model.save_pretrained(f"init_models/{mmm}/adv_init_model")
     torch.cuda.empty_cache()
     gc.collect()
